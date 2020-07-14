@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="cn">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <script src="js/papaparse.min.js"></script>
+    <script src="js/popper.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+    <title>题目</title>
+    <style>
+        .header_content{
+            width: 100%;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .class_link{
+            font-size: 30px;
+            margin:20px;
+        }
+        .question_content{
+            width: 100%;
+            margin-top: 30px;
+        }
+        .question{
+            font-size: 20px;
+        }
+        .select_content{
+            margin-top: 30px;
+        }
+        .select_list{
+            margin:10px;
+            font-size: 20px;
+        }
+        .select_question{
+            text-align: center;
+            margin:10px;
+        }
+        .bottom_link{
+            margin:15px;
+            font-size: 20px;
+        }
+        .answer_show{
+            margin-top: 5px;
+            font-size:20px;
+            text-align: center;
+        }
+    </style>
+
+    <script type="text/javascript" src="./js/echarts.min.js">
+    </script>
+    <script>
+        window.onload=function() {
+            //获取数据，保存到question数组中
+            var questions=[]
+            $.get('./data/A.json', function (data) {
+                for(var i=0; i<data.length;i++){
+                    questions.push(
+                        {
+                            "topic":data[i].que,
+                            "ans":data[i].ans,
+                            "rans":data[i].rans,
+                            "analysis":data[i].analysis
+                        }
+                    );
+
+                    /**
+                     //      * 打乱题目顺序
+                     //      */
+                    var current_index = 0;//当前题目的索引
+                    var questions_random=[];
+                    var indexs=[];
+                    for(var i=0;i<questions.length;i++){
+                        indexs.push(i);
+                    }
+                    var indexs_random=indexs.sort(function(){
+                        return .5 - Math.random();
+                    })
+                    for(var i=0;i<indexs_random.length;i++){
+                        var index=indexs_random[i];
+                        questions_random.push(questions[index]);
+                    }
+
+                    /**
+                     //      * 获取各个元素
+                     //      * @type {HTMLElement}
+                     //      */
+                    var question_content=document.getElementById("question_content");
+                    var select_options=document.getElementsByName("exampleRadios");
+                    var sub_ans=document.getElementById("sub_ans");
+                    var answer_show=document.getElementById("answers");
+                    var pre_question=document.getElementById("pre_question");
+                    var analysis_question=document.getElementById("analysis_question");
+                    var next_question=document.getElementById("next_question");
+                    var analysis_show=document.getElementById("analysis_img");
+
+
+                    /**
+                     * 初始化显示
+                     */
+                    question_content.innerHTML=questions_random[current_index].topic;
+                    var ans_random=questions_random[current_index].ans.sort(function(){
+                        return .5 - Math.random();
+                    });
+                    document.getElementById("A_ans").innerHTML=ans_random[0];
+                    document.getElementById("B_ans").innerHTML=ans_random[1];
+                    document.getElementById("C_ans").innerHTML=ans_random[2];
+                    document.getElementById("D_ans").innerHTML=ans_random[3];
+
+                    function options_able(flag){
+                        for(var i=0;i<select_options.length;i++){
+                            if(select_options[i].checked){
+                                select_options[i].disable=flag;
+                            }
+                        }
+                    }
+
+                    /**
+                     * 显示题目，题目已经打乱排序
+                     * */
+                    function question_show(){
+                        question_content.innerHTML=questions_random[current_index].topic;
+                        var ans_random=questions_random[current_index].ans.sort(function(){
+                            return .5 - Math.random();
+                        });
+                        document.getElementById("A_ans").innerHTML=ans_random[0];
+                        document.getElementById("B_ans").innerHTML=ans_random[1];
+                        document.getElementById("C_ans").innerHTML=ans_random[2];
+                        document.getElementById("D_ans").innerHTML=ans_random[3];
+                    }
+
+                    /**
+                     * 初始化但选项和答案解析部分的内容*/
+                    function clear_ans(){
+                        for(var i=0;i<select_options.length;i++){
+                            select_options[i].checked=false;
+                        }
+                        answer_show.innerHTML="";
+                        analysis_show.src="";
+                    }
+                    /**
+                     * 提交链接事件处理
+                     */
+                    sub_ans.onclick=function(){
+                        options_able(true);
+                        var ans_user="";
+                        //判断选择的哪个答案
+                        for(var i=0;i<select_options.length;i++){
+                            if(select_options[i].checked){
+                                ans_user=select_options[i].value;
+                                break;
+                            }
+                        }
+                        if(ans_user==null || ans_user==""){
+                            alert("请选择答案");
+                        }else if(ans_user == questions_random[current_index].rans){
+                            answer_show.innerHTML="答案正确";
+                        }else{
+                            answer_show.innerHTML="答案错误"+"<br>"+"你的答案："+ans_user+"&nbsp;"+"正确答案："+questions_random[current_index].rans;
+                        }
+                    }
+
+                    /**
+                     * 下一题事件处理
+                     */
+                    next_question.onclick=function(){
+                        if(current_index==questions_random.length-1){
+                            alert("已是最后一题！将重新开始");
+                            location.reload();
+                        }else{
+                            current_index++;
+                            question_show();
+                        }
+                        clear_ans();
+                    }
+
+                    /**
+                     * 上一题事件处理
+                     */
+                    pre_question.onclick=function () {
+                        if(current_index==0){
+                            alert("已是第一题！将重新开始");
+                            location.reload();
+                        }else {
+                            current_index--;
+                            question_show();
+                        }
+                        clear_ans();
+                    }
+
+                    /**
+                     * 查看答案解析事件
+                     */
+                    analysis_question.onclick=function(){
+                        // analysis_show.src="./img/1.png";
+                        answer_show.innerHTML="本题答案:&nbsp;"+questions_random[current_index].rans;
+                    }
+                }
+            });
+        }
+    </script>
+
+
+
+    <script>
+        // function question(topic, ans1, ans2, ans3, ans4, rans, analysis){
+        //      this.topic=topic;
+        //      this.ans=[ans1, ans2, ans3, ans4];
+        //      this.rans=rans;
+        //      this.analysis=analysis;
+        // }
+        // /**
+        //  * 数据处理部分
+        //  * @type {*[]}
+        //  */
+        // var questions=[];
+        // Papa.parse('F://Code//Java//JavaWeb//Test//src//data//A.csv', {
+        //     download: true,
+        //     encoding:"utf-8",
+        //     complete: function(results) {
+        //         var data = results.data;
+        //         for(var i = 0; i < data.length-1; i++) {
+        //             var item = data[i];
+        //             // questions[i]={
+        //             //     topic: item[0],
+        //             //     ans: [item[1],item[2],item[3],item[4]],
+        //             //     rans: item[5],
+        //             //     analysis:item[6]
+        //             // };
+        //             questions.push(new question(item[0],item[1],item[2],item[3],item[4],item[5],item[6]));
+        //         }
+        //     }
+        // });
+        //
+        // window.onload=function(){
+        //     /**
+        //      * 打乱题目顺序
+        //      */
+        //     var current_index = 0;//当前题目的索引
+        //     var questions_random=[];
+        //     var indexs=[];
+        //     for(var i=0;i<questions.length;i++){
+        //         indexs.push(i);
+        //     }
+        //     var indexs_random=indexs.sort(function(){
+        //         return .5 - Math.random();
+        //     })
+        //     for(var i=0;i<indexs_random.length;i++){
+        //         var index=indexs_random[i];
+        //         questions_random.push(questions[index]);
+        //     }
+        //     /**
+        //      * 获取各个元素
+        //      * @type {HTMLElement}
+        //      */
+        //     var question_content=document.getElementById("question_content");
+        //     var select_options=document.getElementsByName("exampleRadios");
+        //     var sub_ans=document.getElementById("sub_ans");
+        //     var answer_show=document.getElementById("answers");
+        //     var pre_question=document.getElementById("pre_question");
+        //     var analysis_question=document.getElementById("analysis_question");
+        //     var next_question=document.getElementById("next_question");
+        //     var analysis_show=document.getElementById("analysis_img");
+        //
+        //
+        //     /**
+        //      * 初始化显示
+        //      */
+        //     question_content.innerHTML=questions_random[current_index].topic;
+        //     var ans_random=questions_random[current_index].ans.sort(function(){
+        //         return .5 - Math.random();
+        //     });
+        //     document.getElementById("A_ans").innerHTML=ans_random[0];
+        //     document.getElementById("B_ans").innerHTML=ans_random[1];
+        //     document.getElementById("C_ans").innerHTML=ans_random[2];
+        //     document.getElementById("D_ans").innerHTML=ans_random[3];
+        //
+        //     function options_able(flag){
+        //         for(var i=0;i<select_options.length;i++){
+        //             if(select_options[i].checked){
+        //                 select_options[i].disable=flag;
+        //             }
+        //         }
+        //     }
+        //
+        //     /**
+        //      * 显示题目，题目已经打乱排序
+        //      * */
+        //     function question_show(){
+        //         question_content.innerHTML=questions_random[current_index].topic;
+        //         var ans_random=questions_random[current_index].ans.sort(function(){
+        //             return .5 - Math.random();
+        //         });
+        //         document.getElementById("A_ans").innerHTML=ans_random[0];
+        //         document.getElementById("B_ans").innerHTML=ans_random[1];
+        //         document.getElementById("C_ans").innerHTML=ans_random[2];
+        //         document.getElementById("D_ans").innerHTML=ans_random[3];
+        //     }
+        //
+        //     /**
+        //      * 初始化但选项和答案解析部分的内容*/
+        //     function clear_ans(){
+        //         for(var i=0;i<select_options.length;i++){
+        //             select_options[i].checked=false;
+        //         }
+        //         answer_show.innerHTML="";
+        //         analysis_show.src="";
+        //     }
+        //     /**
+        //      * 提交链接事件处理
+        //      */
+        //     sub_ans.onclick=function(){
+        //         options_able(true);
+        //         var ans_user="";
+        //         //判断选择的哪个答案
+        //         for(var i=0;i<select_options.length;i++){
+        //             if(select_options[i].checked){
+        //                 ans_user=select_options[i].value;
+        //                 break;
+        //             }
+        //         }
+        //         if(ans_user==null || ans_user==""){
+        //             alert("请选择答案");
+        //         }else if(ans_user == questions_random[current_index].rans){
+        //             answer_show.innerHTML="答案正确";
+        //         }else{
+        //             answer_show.innerHTML="答案错误"+"<br>"+"你的答案："+ans_user+"&nbsp;"+"正确答案："+questions_random[current_index].rans;
+        //         }
+        //     }
+        //
+        //     /**
+        //      * 下一题事件处理
+        //      */
+        //     next_question.onclick=function(){
+        //         if(current_index==questions_random.length-1){
+        //             alert("已是最后一题！将重新开始");
+        //             location.reload();
+        //         }else{
+        //             current_index++;
+        //             question_show();
+        //         }
+        //         clear_ans();
+        //     }
+        //
+        //     /**
+        //      * 上一题事件处理
+        //      */
+        //     pre_question.onclick=function () {
+        //         if(current_index==0){
+        //             alert("已是第一题！将重新开始");
+        //             location.reload();
+        //         }else {
+        //             current_index--;
+        //             question_show();
+        //         }
+        //         clear_ans();
+        //     }
+        //
+        //     /**
+        //      * 查看答案解析事件
+        //      */
+        //     analysis_question.onclick=function(){
+        //         // analysis_show.src="./img/1.png";
+        //         answer_show.innerHTML="本题答案:&nbsp;"+questions_random[current_index].rans;
+        //     }
+        //
+        // }
+    </script>
+</head>
+<body>
+    <head class="container">
+        <div class="row header_content">
+            <div class="col-md-12">
+                <a href="#" class="class_link" id="class_A" onclick="location.reload();">A类型</a>
+                <a href="index.html" class="class_link" id="class_B">B类型</a>
+            </div>
+        </div>
+    </head>
+
+    <div class="container">
+        <div class="row question_content">
+            <div class="offset-3 question" id="question_content">
+
+            </div>
+        </div>
+        <div class="row select_content">
+            <div class="offset-3 select">
+                <div class="form-check select_list">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="A">
+                    <label class="form-check-label" for="exampleRadios1" id="A_ans">
+
+                    </label>
+                </div>
+                <div class="form-check select_list">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="B">
+                    <label class="form-check-label" for="exampleRadios2" id="B_ans">
+
+                    </label>
+                </div>
+                <div class="form-check select_list">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios3" value="C">
+                    <label class="form-check-label" for="exampleRadios3" id="C_ans">
+
+                    </label>
+                </div>
+                <div class="form-check select_list">
+                    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios4" value="D">
+                    <label class="form-check-label" for="exampleRadios4" id="D_ans">
+
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 select_question">
+                <a class="bottom_link" href="#" id="sub_ans">提交</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 select_question">
+                <a class="bottom_link" href="#" id="pre_question">上一题</a>
+                <a class="bottom_link" href="#" id="analysis_question">查看答案</a>
+                <a class="bottom_link" href="#" id="next_question">下一题</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 answer_show">
+                <p id="answers"></p>
+            </div>
+            <div class="col-md-12 analysis_show select_question">
+                <img src="" id="analysis_img">
+            </div>
+        </div>
+    </div>
+</body>
+</html>
